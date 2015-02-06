@@ -1,26 +1,22 @@
-// nodeEdition
-
 'use strict';
 
 var fs = require('fs');
-var mysql = require('mysql');
 var chalk = require('chalk');
 var inquirer = require("inquirer");
+var projectSetup = require('./utils/project-setup');
 
-var dbCondigPath = 'database.json';
-var dbConfig = {};
-var connection;
 
-var templates = [];
-var folders = [];
-
+var startApp,
+    dbConfig,
+    dbCondigPath = 'database.json',
+    project = new projectSetup();
 
 fs.exists(dbCondigPath, function (exists) {
 
   if (exists) {
     fs.readFile(dbCondigPath,{encoding:'utf8'},  function (err, data) {
       dbConfig = JSON.parse(data);
-      startApp();
+      project.init(dbConfig, startApp);
     });
   } else {
     console.log(chalk.blue('Hi! Welcome to nodeEdtion!\n'));
@@ -45,13 +41,15 @@ fs.exists(dbCondigPath, function (exists) {
       dbConfig = answer;
       fs.writeFile(dbCondigPath, function () {
         console.log(chalk.green('Yiha! We configured your project succesfully!'));
-        startApp();
+        project.init(dbConfig, function () {
+          startApp();
+        });
       });
     });
   }
 });
 
-var startApp = function () {
+startApp = function () {
   inquirer.prompt([{
     name: 'whatNow',
     type: 'list',
@@ -78,46 +76,3 @@ var startApp = function () {
   });
 };
 
-var getFoldersFromDb = function () {
-  connection = mysql.createConnection(dbConfig);
-  connection.connect();
-  connection.query('SELECT * FROM tbltemplates WHERE IsFolder = 1 ', function(err, rows, fields) {
-      if (err) {
-        throw err;
-      }
-      for (var i in rows) {
-        folders.push(rows[i]);
-      }
-      createTempalteFolders();
-  });
-  connection.end();
-};
-
-var createTempalteFolders = function () {
-  if(!fs.existsSync('app')) {
-    fs.mkdirSync('app');
-  }
-
-  for(var i in folders) {
-    if(!fs.existsSync('app' + folders[i].Path)) {
-      fs.mkdirSync('app' + folders[i].Path);
-    }
-  }
-
-  createTempalteFiles();
-};
-
-var createTempalteFiles = function () {
-  connection = mysql.createConnection(dbConfig);
-  connection.connect();
-  connection.query('SELECT * FROM tbltemplates WHERE IsFolder = 0 ', function(err, rows, fields) {
-      if (err) throw err;
-      for (var i in rows) {
-        templates.push(rows[i])
-        if (!fs.existsSync('app' + rows[i].Path)) {
-          fs.writeFileSync('app' + rows[i].Path, '');
-        }
-      }
-  });
-  connection.end();
-};
