@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/deviloperz/nodeEdition",
   "dependencies": {
+    "chalk": "^0.5.1",
+    "inquirer": "^0.8.0",
     "mysql": "^2.5.4"
   }
 }
